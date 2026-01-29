@@ -178,13 +178,11 @@ const App: React.FC = () => {
         <header className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-end border-b border-cyan-900/30 pb-6 gap-4">
           <div className="flex items-center gap-4">
             <div>
-              <div className="text-xs font-mono text-cyan-500 tracking-[0.2em] mb-1">OPERATING SYSTEM FOR BUSINESS EXCELLENCE</div>
-              <h1 className="text-4xl font-bold text-zinc-100 tracking-tight uppercase">
-                OVERWATCH³ <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400">// DECISION OS</span>
+              <h1 className="text-5xl font-black text-zinc-100 tracking-tighter uppercase leading-none">
+                OVERWATCH<span className="align-top text-3xl">³</span> <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400 opacity-90">// DECISION OS</span>
               </h1>
-              <p className="text-zinc-400 max-w-lg mt-2">
-                Strategic Wayfinding. Quantify Entitlement Risk. Eliminate the "Fog of Development".
-              </p>
+              <div className="text-sm font-mono text-cyan-500/80 tracking-[0.3em] mt-3 pl-1">OPERATING SYSTEM FOR BUSINESS EXCELLENCE</div>
+
             </div>
           </div>
           
