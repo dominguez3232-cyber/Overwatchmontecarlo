@@ -3,9 +3,10 @@ import { RiskInputForm, ProjectParams, RiskFactor } from "@/app/components/Monte
 import { RiskQuickAdd } from "@/app/components/MonteCarlo/RiskQuickAdd";
 import { OutcomeHistogram } from "@/app/components/MonteCarlo/OutcomeHistogram";
 import { CockpitDashboard } from "@/app/components/MonteCarlo/CockpitDashboard";
-import { SensitivityChart } from "@/app/components/MonteCarlo/SensitivityChart"; // Import new chart
+import { SensitivityChart } from "@/app/components/MonteCarlo/SensitivityChart";
+import { DraggablePanel, useDraggablePanels } from "@/app/components/MonteCarlo/DraggablePanel";
 import { addDays, differenceInDays, format } from 'date-fns';
-import { Target, CloudRain, Hammer, Truck, ScrollText, Ruler, TriangleAlert, Info } from "lucide-react";
+import { Target, CloudRain, Hammer, Truck, ScrollText, Ruler, TriangleAlert, Info, Lock, Unlock, RotateCcw, Move, Scaling } from "lucide-react";
 
 // Import Assets
 import backgroundImage from "figma:asset/dc9703d5168e6711d7ef0481d87e0acfcf40c9b8.png";
@@ -57,6 +58,20 @@ const App: React.FC = () => {
   const [probability, setProbability] = useState<number>(0);
   const [isRunning, setIsRunning] = useState(false);
   const [hasRun, setHasRun] = useState(false);
+
+  const PANEL_IDS = ['riskForm', 'quickAdd', 'cockpit', 'forensics', 'sensitivity', 'histogram'];
+  const {
+    positions,
+    sizes,
+    zIndices,
+    isLocked,
+    hasCustomLayout,
+    updatePosition,
+    updateSize,
+    bringToFront,
+    resetLayout,
+    toggleLock,
+  } = useDraggablePanels(PANEL_IDS);
 
   useEffect(() => {
     // Run initial small simulation
@@ -198,22 +213,90 @@ const App: React.FC = () => {
           </div>
         </header>
 
+        {/* Layout Controls */}
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={toggleLock}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-mono uppercase tracking-wider transition-all border ${
+                isLocked
+                  ? 'bg-slate-900/60 border-slate-700 text-slate-400 hover:border-slate-500'
+                  : 'bg-cyan-950/60 border-cyan-500/40 text-cyan-400 hover:bg-cyan-900/40 shadow-[0_0_15px_rgba(6,182,212,0.15)]'
+              }`}
+            >
+              {isLocked ? (
+                <>
+                  <Lock className="w-3.5 h-3.5" />
+                  LAYOUT LOCKED
+                </>
+              ) : (
+                <>
+                  <Unlock className="w-3.5 h-3.5" />
+                  LAYOUT UNLOCKED
+                </>
+              )}
+            </button>
+
+            {!isLocked && (
+              <div className="flex items-center gap-2 text-[10px] font-mono text-slate-500 bg-slate-900/40 px-3 py-2 rounded-lg border border-slate-800">
+                <Move className="w-3 h-3" />
+                DRAG TO MOVE
+                <span className="text-slate-700 mx-1">|</span>
+                <Scaling className="w-3 h-3" />
+                EDGES & CORNERS TO RESIZE
+              </div>
+            )}
+          </div>
+
+          {hasCustomLayout && (
+            <button
+              onClick={resetLayout}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-mono uppercase tracking-wider bg-slate-900/60 border border-amber-500/30 text-amber-400 hover:bg-amber-950/30 hover:border-amber-500/50 transition-all"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              RESET LAYOUT
+            </button>
+          )}
+        </div>
+
         {/* Main Dashboard Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
           {/* Left Column: Inputs */}
           <div className="lg:col-span-4 space-y-8">
-            <RiskInputForm 
-              params={params} 
-              setParams={setParams} 
-              onRun={runSimulation} 
-              isRunning={isRunning} 
-            />
+            <DraggablePanel
+              id="riskForm"
+              position={positions.riskForm || { x: 0, y: 0 }}
+              onPositionChange={updatePosition}
+              size={sizes.riskForm || { width: 'auto', height: 'auto' }}
+              onSizeChange={updateSize}
+              zIndex={zIndices.riskForm || 1}
+              onBringToFront={bringToFront}
+              isLocked={isLocked}
+            >
+              <RiskInputForm 
+                params={params} 
+                setParams={setParams} 
+                onRun={runSimulation} 
+                isRunning={isRunning} 
+              />
+            </DraggablePanel>
             
-            <RiskQuickAdd 
-              onAddRisk={handleAddRisk}
-              existingRiskIds={params.risks.map(r => r.id)}
-            />
+            <DraggablePanel
+              id="quickAdd"
+              position={positions.quickAdd || { x: 0, y: 0 }}
+              onPositionChange={updatePosition}
+              size={sizes.quickAdd || { width: 'auto', height: 'auto' }}
+              onSizeChange={updateSize}
+              zIndex={zIndices.quickAdd || 2}
+              onBringToFront={bringToFront}
+              isLocked={isLocked}
+            >
+              <RiskQuickAdd 
+                onAddRisk={handleAddRisk}
+                existingRiskIds={params.risks.map(r => r.id)}
+              />
+            </DraggablePanel>
           </div>
 
           {/* Right Column: Results */}
@@ -221,38 +304,82 @@ const App: React.FC = () => {
             {hasRun ? (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
                 {/* 1. Cockpit Dashboard */}
-                <CockpitDashboard 
-                  p50Date={p50Date} 
-                  p90Date={p90Date} 
-                  probability={probability} 
-                />
+                <DraggablePanel
+                  id="cockpit"
+                  position={positions.cockpit || { x: 0, y: 0 }}
+                  onPositionChange={updatePosition}
+                  size={sizes.cockpit || { width: 'auto', height: 'auto' }}
+                  onSizeChange={updateSize}
+                  zIndex={zIndices.cockpit || 3}
+                  onBringToFront={bringToFront}
+                  isLocked={isLocked}
+                >
+                  <CockpitDashboard 
+                    p50Date={p50Date} 
+                    p90Date={p90Date} 
+                    probability={probability} 
+                  />
+                </DraggablePanel>
                 
                 {/* 2. Insight Banner - High Prominence */}
-                <div className="p-5 bg-gradient-to-r from-cyan-950/60 to-slate-900/60 border border-cyan-500/30 rounded-xl flex items-start gap-4 shadow-lg backdrop-blur-md">
-                   <div className="p-2 bg-cyan-500/20 rounded-lg text-cyan-400 mt-1">
-                      <Info className="w-6 h-6" />
-                   </div>
-                   <div className="space-y-1">
-                      <h3 className="text-cyan-400 font-bold font-mono tracking-wider text-sm flex items-center gap-2">
-                        DECISION FORENSICS BRIEF <span className="text-xs bg-cyan-500/20 px-2 py-0.5 rounded text-cyan-300">{params.simulations.toLocaleString()} Scenarios</span>
-                      </h3>
-                      <p className="text-zinc-200 leading-relaxed text-sm">
-                         Based on active <strong>Entitlement & Capital Risks</strong>, there is a <span className="font-bold text-white text-base">{probability.toFixed(1)}% probability</span> of meeting the target. 
-                         To achieve <strong>90% Confidence (P90)</strong>, the project requires a buffer of <span className="font-bold text-white border-b border-dashed border-cyan-500">{differenceInDays(p90Date, new Date(params.targetDate))} days</span>.
-                      </p>
-                   </div>
-                </div>
+                <DraggablePanel
+                  id="forensics"
+                  position={positions.forensics || { x: 0, y: 0 }}
+                  onPositionChange={updatePosition}
+                  size={sizes.forensics || { width: 'auto', height: 'auto' }}
+                  onSizeChange={updateSize}
+                  zIndex={zIndices.forensics || 4}
+                  onBringToFront={bringToFront}
+                  isLocked={isLocked}
+                >
+                  <div className="p-5 bg-gradient-to-r from-cyan-950/60 to-slate-900/60 border border-cyan-500/30 rounded-xl flex items-start gap-4 shadow-lg backdrop-blur-md">
+                     <div className="p-2 bg-cyan-500/20 rounded-lg text-cyan-400 mt-1">
+                        <Info className="w-6 h-6" />
+                     </div>
+                     <div className="space-y-1">
+                        <h3 className="text-cyan-400 font-bold font-mono tracking-wider text-sm flex items-center gap-2">
+                          DECISION FORENSICS BRIEF <span className="text-xs bg-cyan-500/20 px-2 py-0.5 rounded text-cyan-300">{params.simulations.toLocaleString()} Scenarios</span>
+                        </h3>
+                        <p className="text-zinc-200 leading-relaxed text-sm">
+                           Based on active <strong>Entitlement & Capital Risks</strong>, there is a <span className="font-bold text-white text-base">{probability.toFixed(1)}% probability</span> of meeting the target. 
+                           To achieve <strong>90% Confidence (P90)</strong>, the project requires a buffer of <span className="font-bold text-white border-b border-dashed border-cyan-500">{differenceInDays(p90Date, new Date(params.targetDate))} days</span>.
+                        </p>
+                     </div>
+                  </div>
+                </DraggablePanel>
 
                 {/* 3. Sensitivity Chart - Full Width */}
-                <SensitivityChart data={sensitivityData} />
+                <DraggablePanel
+                  id="sensitivity"
+                  position={positions.sensitivity || { x: 0, y: 0 }}
+                  onPositionChange={updatePosition}
+                  size={sizes.sensitivity || { width: 'auto', height: 'auto' }}
+                  onSizeChange={updateSize}
+                  zIndex={zIndices.sensitivity || 5}
+                  onBringToFront={bringToFront}
+                  isLocked={isLocked}
+                >
+                  <SensitivityChart data={sensitivityData} />
+                </DraggablePanel>
 
                 {/* 4. Histogram - Full Width */}
-                <OutcomeHistogram 
-                  data={histogramData} 
-                  p50={differenceInDays(p50Date, new Date(params.startDate))}
-                  p90={differenceInDays(p90Date, new Date(params.startDate))}
-                  baseEstimate={params.baseDuration}
-                />
+                <DraggablePanel
+                  id="histogram"
+                  position={positions.histogram || { x: 0, y: 0 }}
+                  onPositionChange={updatePosition}
+                  size={sizes.histogram || { width: 'auto', height: 'auto' }}
+                  onSizeChange={updateSize}
+                  zIndex={zIndices.histogram || 6}
+                  onBringToFront={bringToFront}
+                  isLocked={isLocked}
+                >
+                  <OutcomeHistogram 
+                    data={histogramData} 
+                    p50={differenceInDays(p50Date, new Date(params.startDate))}
+                    p90={differenceInDays(p90Date, new Date(params.startDate))}
+                    baseEstimate={params.baseDuration}
+                  />
+                </DraggablePanel>
                 
               </div>
             ) : (
